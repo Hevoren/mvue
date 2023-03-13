@@ -18,6 +18,10 @@ h1, h2{
     flex-direction: row;
 }
 
+.note{
+    border: 1px solid black;
+}
+
 .createForm{
     margin: auto;
     width: 220px;
@@ -36,6 +40,7 @@ input {
 
 .li-list{
     list-style: none;
+    border: 1px solid black;
 }
 
 .li-task{
