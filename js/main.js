@@ -57,7 +57,7 @@ Vue.component('first-note', {
     // watch отслеживает изменения, если они есть, то он присваивает и сохраняет новые значения, добавляя их в localstorage и преобразовывая ('stringify') в json формат
 
     watch: {
-        colum_1(newValue) {
+        column_1(newValue) {
             localStorage.setItem("column_1", JSON.stringify(newValue));
         },
     },
@@ -80,12 +80,12 @@ Vue.component('first-note', {
                     note.status++;
                 }
             }
-            if (note.status/count*100 >= 50 && this.colum_2.length < 5) {
-                this.colum_2.push(note)
-                this.colum_1.splice(this.colum_1.indexOf(note), 1)
-            } else if (this.colum_2.length === 5) {
-                if(this.colum_1.length > 0) {
-                    this.colum_1.forEach(item => {
+            if (note.status/count*100 >= 50 && this.column_2.length < 5) {
+                this.column_2.push(note)
+                this.column_1.splice(this.column_1.indexOf(note), 1)
+            } else if (this.column_2.length === 5) {
+                if(this.column_1.length > 0) {
+                    this.column_1.forEach(item => {
                         item.tasks.forEach(item => {
                             item.readiness = true;
                         })
@@ -109,13 +109,13 @@ Vue.component('first-note', {
                 }
             }
             if (note.status/count*100 === 100) {
-                this.colum_3.push(note)
-                this.colum_2.splice(this.colum_2.indexOf(note), 1)
+                this.column_3.push(note)
+                this.column_2.splice(this.column_2.indexOf(note), 1)
                 note.date = new Date()
             }
-            if(this.colum_2.length < 5) {
-                if(this.colum_1.length > 0) {
-                    this.colum_1.forEach(item => {
+            if(this.column_2.length < 5) {
+                if(this.column_1.length > 0) {
+                    this.column_1.forEach(item => {
                         item.tasks.forEach(item => {
                             item.readiness = false;
                         })
@@ -208,9 +208,12 @@ Vue.component('third-note', {
             active: 0
         }
     },
+
     mounted(){
         this.column_3 = JSON.parse(localStorage.getItem("column_3")) || [];
-    }
+    },
+
+
 
 })
 
@@ -219,9 +222,9 @@ Vue.component('create-note', {
         <div class="createNote">
             <form class="createForm" @submit.prevent="onSubmit">
                 <input type="text" placeholder="Name" id="name" v-model="name" required maxlength="10">
-                <input type="text" placeholder="Task 1" id="task_1" v-model="task_1" required maxlength="10">
-                <input type="text" placeholder="Task 2" id="task_2" v-model="task_2" required maxlength="10">
-                <input type="text" placeholder="Task 3" id="task_3" v-model="task_3" required maxlength="10">
+                <input type="text" placeholder="Task 1" id="task_1" v-model="task_1" maxlength="10">
+                <input type="text" placeholder="Task 2" id="task_2" v-model="task_2" maxlength="10">
+                <input type="text" placeholder="Task 3" id="task_3" v-model="task_3" maxlength="10">
                 <input type="text" placeholder="Task 4" id="task_4" v-model="task_4">
                 <input type="text" placeholder="Task 5" id="task_5" v-model="task_5">
                 <button type="submit">Create</button>
@@ -237,12 +240,14 @@ Vue.component('create-note', {
             task_3: null,
             task_4: null,
             task_5: null,
+            all_tasks: []
         }
     },
 
     methods: {
         onSubmit() {
-            if (this.name && this.task_1 && this.task_2 && this.task_3){
+            this.all_tasks.push(this.task_1, this.task_2, this.task_3, this.task_4, this.task_5)
+            if (this.all_tasks.length >= 3){
                 let note = {
                     name: this.name,
                     tasks: [
