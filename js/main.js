@@ -20,8 +20,12 @@ Vue.component('first-note', {
             <ul>
                 <li v-for="note in column_1" class="li-list">
                     <h1>{{ note.name }}</h1>
+                    <h3>{{ column_1 }}</h3>
+                    <h3>{{ note }}</h3>
+                    <h3>{{ note.tasks }}</h3>
+                    <h3>{{ note.tasks.name }}</h3>
                     <ul>
-                        <li v-for="task in note.tasks" class="li-task" v-if="task !== null" @click = "updateColumn(task, note)">
+                        <li v-for="task in note.tasks" class="li-task" v-if="task !== null" >
                             <p>{{task}}</p>
                             <input type="checkbox">
                         </li>
@@ -37,6 +41,7 @@ Vue.component('first-note', {
             errors: [],
             active: 0
         }
+
     },
     // mounted - вызывается после того, как компонент был добавлен в DOM, т.е. србатывает после того как даннные улетели из формы сюда.
     // после чего он пытается достать и разобрать строку json из localstorage, и если ее нет, присваивает пустой массив
@@ -44,6 +49,7 @@ Vue.component('first-note', {
     mounted(){
         this.column_1 = JSON.parse(localStorage.getItem("column_1")) || [];
         eventBus.$on('notes-submitted', note => {
+
             this.errors = []
             if (this.column_1.length < 3){
                 this.column_1.push(note);
@@ -66,6 +72,7 @@ Vue.component('first-note', {
         saveNote_1(){
             localStorage.setItem('column_1', JSON.stringify(this.column_1));
         },
+
     }
 
 })
@@ -210,11 +217,7 @@ Vue.component('create-note', {
         onSubmit() {
             this.errors = []
             this.all_tasks.push(this.task_1, this.task_2, this.task_3, this.task_4, this.task_5)
-            console.log(this.all_tasks)
-            console.log(this.all_tasks.length)
             this.all_tasks = this.all_tasks.filter(Boolean)
-            console.log(this.all_tasks)
-            console.log(this.all_tasks.length)
             if (this.all_tasks.length >= 3 ){
                 let note = {
                     name: this.name,
@@ -226,10 +229,11 @@ Vue.component('create-note', {
                         task_5: this.task_5,
                     },
                     data: null,
-                    columnСondition: 0,
+                    сondition: 0,
                 }
 
                 eventBus.$emit('notes-submitted', note);
+                eventBus.$emit('notes-poleteli', note);
                 this.name = null;
                 this.task_1 = null;
                 this.task_2 = null;
