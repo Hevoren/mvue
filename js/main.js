@@ -79,7 +79,6 @@ Vue.component('notes', {
 
 })
 
-
 Vue.component('note', {
     props: {
         column: {
