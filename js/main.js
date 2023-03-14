@@ -13,8 +13,8 @@ Vue.component('notes', {
     template: `
         <div class="notes">
             <note :column="column_1" :errors="errors"></note>
-            <note :column="column_2"></note>
-            <note :column="column_3"></note>
+            <note :column="column_2" :errors="errors"></note>
+            <note :column="column_3" :errors="errors"></note>
         </div>
     `,
 
@@ -23,14 +23,18 @@ Vue.component('notes', {
             column_1: [],
             column_2: [
                 {
-                    name: 'garry',
-                    tasks: {
-                        task_1: '123',
-                        task_2: 'sdfgsdf',
-                        task_3: 'gandom',
-                    },
-                    data: null
-            }],
+                    name:'gg',
+                    tasks: [
+                        {name: 'adsasd', readiness: false},
+                        {name: 'asd', readiness: false},
+                        {name: 'sad', readiness: false},
+                        {name: 'asdasd', readiness: false},
+                        {name: 'asdsad', readiness: false},
+                    ],
+                    id: 5,
+                    status: 0
+                }
+            ],
             column_3: [],
             errors: []
         }
@@ -38,9 +42,8 @@ Vue.component('notes', {
     // mounted - вызывается после того, как компонент был добавлен в DOM, т.е. србатывает после того как даннные улетели из формы сюда.
     // после чего он пытается достать и разобрать строку json из localstorage, и если ее нет, присваивает пустой массив
     mounted(){
-        this.column_1 = JSON.parse(localStorage.getItem("column_1")) || [];
-        this.column_2 = JSON.parse(localStorage.getItem("column_2")) || [];
-        this.column_3 = JSON.parse(localStorage.getItem("column_3")) || [];
+        console.log(this.column_2)
+        console.log(typeof (this.column_2))
         eventBus.$on('notes-submitted', note => {
             this.errors = []
             if (this.column_1.length < 3){
@@ -84,63 +87,36 @@ Vue.component('note', {
         column: {
             type: Array,
             required: true,
+
         },
         errors: {
             type: Array,
-            required: false,
+            required: true,
         }
     },
 
     template: `
         <div>
             <div class="note" >
+                
                 <h1 v-for="error in errors"> {{ error }}</h1>
-                <ul> 
-                    <li v-for="note in column"  class="li-list">
-                        <h1>{{ note.name }}</h1>
-                        <p>{{ note }}</p>
-                        
-                        <ul>
-                            <li v-for="task in note.tasks" class="li-task" v-if="task !== null" >
-                                <p>{{task}}</p>
-                                <input type="checkbox" @click="updateStatus(note, task)">
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-            <div class="note" >
                 <ul>
-                    <li v-for="note in column" class="li-list">
+                    <li v-for="(note, index) in column" class="li-list">
                         <h1>{{ note.name }}</h1>
                         <ul>
-                            <li v-for="task in note.tasks" class="li-task" v-if="task !== null" >
-                                <p>{{task}}</p>
-                                <input type="checkbox">
+                            <li v-for="(task, index) in note.tasks" class="li-task" v-if="task.name !== null" >
+                                <p>{{ task.name }}</p>
+                                <input type="checkbox" v-if="note.id < 3" v-show="note.id < 3">
+                                <input type="checkbox" v-if="note.id > 3" v-show="note.id > 3">
                             </li>
                         </ul>
                     </li>
                 </ul>
             </div>
-            <div class="note" >
-                <ul>
-                    <li v-for="note in column" class="li-list">
-                        <h1>{{ note.name }}</h1>
-                        <ul>
-                            <li v-for="task in note.tasks" class="li-task" v-if="task !== null" >
-                                <p>{{task}}</p>
-                                <input type="checkbox">
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-            
         </div>
     `,
 
     methods: {
-
     }
 })
 
@@ -182,13 +158,13 @@ Vue.component('create-note', {
             if (this.all_tasks.length >= 3 ){
                 let note = {
                     name: this.name,
-                    tasks: {
-                        task_1: this.task_1,
-                        task_2: this.task_2,
-                        task_3: this.task_3,
-                        task_4: this.task_4,
-                        task_5: this.task_5,
-                    },
+                    tasks: [
+                        {name: this.task_1, readiness: false},
+                        {name: this.task_2, readiness: false},
+                        {name: this.task_3, readiness: false},
+                        {name: this.task_4, readiness: false},
+                        {name: this.task_5, readiness: false},
+                    ],
                     id:this.id,
                     status: 0
                 }
