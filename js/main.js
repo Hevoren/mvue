@@ -97,7 +97,7 @@ Vue.component('note', {
             <div class="note" >
                 <h1 v-for="error in errors"> {{ error }}</h1>
                 <ul>
-                    <li  v-for="note in column"  class="li-list">
+                    <li v-for="note in column"  class="li-list">
                         <h1>{{ note.name }}</h1>
                         <p>{{ note }}</p>
                         
