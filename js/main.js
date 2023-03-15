@@ -12,17 +12,19 @@ Vue.component('all-notes', {
 Vue.component('notes', {
     template: `
         <div class="notes">
-            <note :column="column_1" :errors="errors_1" :name="nameFirst" @changeTask="changeTask" ></note>
-            <note :column="column_2" :errors="errors_2" :name="nameSecond" @changeTask="changeTask"></note>
-            <note :column="column_3" :errors="errors_3" :name="nameThird"></note>
+            <note :column="columns[0]" :errors="errors_1" :name="nameFirst" :colIndex="colIndex1" @changeTask="changeTask" ></note>
+            <note :column="columns[1]" :errors="errors_2" :name="nameSecond" :colIndex="colIndex2" @changeTask="changeTask2"></note>
+            <note :column="columns[2]" :errors="errors_3" :name="nameThird" :colIndex="colIndex3"></note>
         </div>
     `,
 
     data() {
         return {
-            column_1: [],
-            column_2: [],
-            column_3: [],
+            columns: [
+                [],
+                [],
+                [],
+            ],
 
             errors_1: [],
             errors_2: [],
@@ -32,6 +34,10 @@ Vue.component('notes', {
             nameSecond: 'Continue',
             nameThird: 'End',
 
+            colIndex1: 0,
+            colIndex2: 1,
+            colIndex3: 2,
+
             changeTaskArr: [],
 
         }
@@ -39,69 +45,104 @@ Vue.component('notes', {
     // mounted - вызывается после того, как компонент был добавлен в DOM, т.е. србатывает после того как даннные улетели из формы сюда.
     // после чего он пытается достать и разобрать строку json из localstorage, и если ее нет, присваивает пустой массив
     mounted(){
+        // При монтировании компонента, мы проверяем, есть ли в LocalStorage сохраненные данные
+        const savedColumns = localStorage.getItem('columns');
+        if (savedColumns) {
+        // Если данные найдены, мы присваиваем их текущим значениям компонента
+            this.columns = JSON.parse(savedColumns);
+        }
+
+        // Подписываемся на событие notes-submitted
         eventBus.$on('notes-submitted', note => {
-            this.errors_1 = []
-            if (this.column_1.length < 3){
-                this.column_1.push(note);
-                this.saveNote_1();
+            this.errors_1 = [];
+            if (this.columns[0].length < 3) {
+                this.columns[0].push(note);
+        // После добавления новой заметки в колонку, сохраняем все колонки в LocalStorage
+                this.saveNotes();
             } else {
                 this.errors_1.push('GABELLA! Maximum count of tasks!');
             }
-        })
+        });
     },
     // watch отслеживает изменения, если они есть, то он присваивает и сохраняет новые значения, добавляя их в localstorage и преобразовывая ('stringify') в json формат
     watch: {
-        column_1(newValue) {
-            localStorage.setItem("column_1", JSON.stringify(newValue));
+        // Отслеживаем изменения в колонках и сохраняем их в LocalStorage
+        columns: {
+            handler: 'saveNotes',
+            deep: true
         },
-        column_2(newValue) {
-            localStorage.setItem("column_2", JSON.stringify(newValue));
-        },
-        column_3(newValue) {
-            localStorage.setItem("column_3", JSON.stringify(newValue));
-        },
+
     },
     // saveNote вызывается после выполнения mounted; присваивает и сохраняет значения в localstorage, преобразовывая ('stringify') их в json формат
     methods: {
-        saveNote_1(){
-            localStorage.setItem('column_1', JSON.stringify(this.column_1));
+        saveNotes() {
+            // Сохраняем все колонки в LocalStorage
+            localStorage.setItem('columns', JSON.stringify(this.columns));
         },
-        saveNote_2(){
-            localStorage.setItem('column_2', JSON.stringify(this.column_2));
-        },
-        saveNote_3(){
-            localStorage.setItem('column_3', JSON.stringify(this.column_3));
-        },
+
         changeTask(task) {
             let count = 0;
             let countColumn_2 = 0;
-            this.column_1[task.indexNote].tasks[task.indexTask].readiness = !this.column_1[task.indexNote].tasks[task.indexTask].readiness;
+            this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness = !this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness;
             const currentDateTime = new Date();
 
-            for(let i = 0; i < this.column_1[task.indexNote].tasks.length; i++){
-                if (this.column_1[task.indexNote].tasks[i].name !== null) {
+            for(let i = 0; i < this.columns[0][task.indexNote].tasks.length; i++){
+                if (this.columns[0][task.indexNote].tasks[i].name !== null) {
                     count++;
                 }
             }
-            console.log("count", count)
-            for (let i = 0; i < this.column_1[task.indexNote].tasks.length; i++) {
-                if (this.column_1[task.indexNote].tasks[i].readiness === true) {
+            for (let i = 0; i < this.columns[0][task.indexNote].tasks.length; i++) {
+                if (this.columns[0][task.indexNote].tasks[i].readiness === true) {
                     countColumn_2 += 1;
                 }
             }
-            console.log("countColumn_2", countColumn_2)
-            if (countColumn_2 / count * 100 >= 50 && this.column_2.length < 5) {
-                this.column_2.push(this.column_1[task.indexNote]);
-                this.column_1.splice(task.indexNote, 1);
+            if (countColumn_2 / count * 100 >= 50 && this.columns[1].length < 5) {
+                this.columns[1].push(this.columns[0][task.indexNote]);
+                this.columns[0].splice(task.indexNote, 1);
             }
-            if (countColumn_2 === count && this.column_3.length < 5) {
-                const note = this.column_2[task.indexNote];
-                note.datetime = currentDateTime;
-                this.column_3.push(note);
-                this.column_2.splice(task.indexNote, 1);
+
+            else if(this.columns[1].length === 5){
+                if (this.columns[0].length > 0){
+                    this.columns[0].forEach(item => {
+                        item.columns[0][task.indexNote].tasks.forEach(item => {
+                            item.readiness = true
+                        })
+                    })
+                }
             }
-            console.log(this.changeTaskArr)
         },
+
+        changeTask2(task){
+            let count = 0;
+            let countColumn_2 = 0;
+            this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness = !this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness;
+            const currentDateTime = new Date();
+
+            for(let i = 0; i < this.columns[1][task.indexNote].tasks.length; i++){
+                if (this.columns[1][task.indexNote].tasks[i].name !== null) {
+                    count++;
+                }
+            }
+            for (let i = 0; i < this.columns[1][task.indexNote].tasks.length; i++) {
+                if (this.columns[1][task.indexNote].tasks[i].readiness === true) {
+                    countColumn_2 += 1;
+                }
+            }
+            if (countColumn_2 / count * 100 >= 50 && this.columns[2].length < 5) {
+                this.columns[2].push(this.columns[1][task.indexNote]);
+                this.columns[1].splice(task.indexNote, 1);
+            }
+
+            else if(this.columns[2].length === 5){
+                if (this.columns[1].length > 0){
+                    this.columns[1].forEach(item => {
+                        item.columns[1][task.indexNote].tasks.forEach(item => {
+                            item.readiness = true
+                        })
+                    })
+                }
+            }
+        }
 
 
     }
@@ -122,6 +163,10 @@ Vue.component('note', {
         name: {
             type: String,
             required: true,
+        },
+        colIndex: {
+            type: Number,
+            required: true
         }
     },
 
@@ -136,7 +181,7 @@ Vue.component('note', {
                         <ul>
                             <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" >
                                 <p>{{ task.name }}</p>
-                                <input type="checkbox" @change="changeKeyTask(indexNote, indexTask, name)">
+                                <input type="checkbox" @change="changeKeyTask(indexNote, indexTask, colIndex, name)" :disabled="task.readiness">
                             </li>
                         </ul>
                     </li>
@@ -146,8 +191,8 @@ Vue.component('note', {
     `,
 
     methods: {
-        changeKeyTask(indexNote, indexTask, name){
-            this.$emit('changeTask', {indexNote, indexTask, name})
+        changeKeyTask(indexNote, indexTask, colIndex, name){
+            this.$emit('changeTask', {indexNote, indexTask, colIndex, name})
         },
 
 
