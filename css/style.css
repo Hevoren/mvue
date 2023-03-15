@@ -51,7 +51,7 @@ input {
 
 .li-task{
     align-items: center;
-    list-style-type: disc;
+    list-style-type: none;
     display: flex;
 }
 

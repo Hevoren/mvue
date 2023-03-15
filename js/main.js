@@ -12,9 +12,9 @@ Vue.component('all-notes', {
 Vue.component('notes', {
     template: `
         <div class="notes">
-            <note :column="columns[0]" :errors="errors_1" :name="nameFirst" :colIndex="colIndex1" @changeTask="changeTask" ></note>
-            <note :column="columns[1]" :errors="errors_2" :name="nameSecond" :colIndex="colIndex2" @changeTask="changeTask2"></note>
-            <note :column="columns[2]" :errors="errors_3" :name="nameThird" :colIndex="colIndex3"></note>
+            <note :column="columns[0]" :errors="errors_1" :name="nameFirst" :columnIndex="columnIndex1" @getIndex="getIndex"></note>
+            <note :column="columns[1]" :errors="errors_2" :name="nameSecond" :columnIndex="columnIndex2" @getIndex="getIndex"></note>
+            <note :column="columns[2]" :errors="errors_3" :name="nameThird" :columnIndex="columnIndex3"></note>
         </div>
     `,
 
@@ -34,11 +34,9 @@ Vue.component('notes', {
             nameSecond: 'Continue',
             nameThird: 'End',
 
-            colIndex1: 0,
-            colIndex2: 1,
-            colIndex3: 2,
-
-            changeTaskArr: [],
+            columnIndex1: 0,
+            columnIndex2: 1,
+            columnIndex3: 2,
 
         }
     },
@@ -80,71 +78,51 @@ Vue.component('notes', {
             localStorage.setItem('columns', JSON.stringify(this.columns));
         },
 
-        changeTask(task) {
-            let count = 0;
-            let countColumn_2 = 0;
-            this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness = !this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness;
-            const currentDateTime = new Date();
-
-            for(let i = 0; i < this.columns[0][task.indexNote].tasks.length; i++){
-                if (this.columns[0][task.indexNote].tasks[i].name !== null) {
-                    count++;
-                }
-            }
-            for (let i = 0; i < this.columns[0][task.indexNote].tasks.length; i++) {
-                if (this.columns[0][task.indexNote].tasks[i].readiness === true) {
-                    countColumn_2 += 1;
-                }
-            }
-            if (countColumn_2 / count * 100 >= 50 && this.columns[1].length < 5) {
-                this.columns[1].push(this.columns[0][task.indexNote]);
-                this.columns[0].splice(task.indexNote, 1);
-            }
-
-            else if(this.columns[1].length === 5){
-                if (this.columns[0].length > 0){
-                    this.columns[0].forEach(item => {
-                        item.columns[0][task.indexNote].tasks.forEach(item => {
-                            item.readiness = true
-                        })
-                    })
-                }
-            }
+        getIndex(task) {
+            this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness = true
+            let tasking = this.columns[task.columnIndex][task.indexNote]
+            this.changeTask(task, tasking)
         },
 
-        changeTask2(task){
-            let count = 0;
-            let countColumn_2 = 0;
-            this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness = !this.columns[task.colIndex][task.indexNote].tasks[task.indexTask].readiness;
-            const currentDateTime = new Date();
+        changeTask(task, tasking){
+            let count = tasking.tasks.length;
+            let readinessCount = 0;
 
-            for(let i = 0; i < this.columns[1][task.indexNote].tasks.length; i++){
-                if (this.columns[1][task.indexNote].tasks[i].name !== null) {
-                    count++;
+            for (let i = 0; i < tasking.tasks.length; i++) {
+                if (tasking.tasks[i].readiness === true) {
+                    readinessCount += 1;
                 }
             }
-            for (let i = 0; i < this.columns[1][task.indexNote].tasks.length; i++) {
-                if (this.columns[1][task.indexNote].tasks[i].readiness === true) {
-                    countColumn_2 += 1;
+
+            let percent = readinessCount / count;
+            let fif = 0.5
+
+            if ((fif <= percent) && (this.columns[task.columnIndex] === this.columns[0]) && (this.columns[1].length === 3) ){
+                this.columns[task.columnIndex + 1].push(this.columns[task.columnIndex][task.indexNote])
+                this.columns[task.columnIndex].splice(this.columns[task.columnIndex][task.indexNote], 1)
+            }
+            if (readinessCount === count && this.columns[task.columnIndex] === this.columns[1]){
+                let move = this.columns[task.columnIndex].splice(task.index, 1)
+                this.columns[task.columnIndex + 1].push(...move)
+            }
+
+            //----------------------
+            let maxCards = 0
+            let maxColumnIndex = -1
+            for (let i = 0; i < this.columns.length; i++) {
+                if (this.columns[i].length > maxCards) {
+                    maxCards = this.columns[i].length
+                    maxColumnIndex = i
                 }
             }
-            if (countColumn_2 / count * 100 >= 50 && this.columns[2].length < 5) {
-                this.columns[2].push(this.columns[1][task.indexNote]);
-                this.columns[1].splice(task.indexNote, 1);
+            if (maxColumnIndex === 1 && percent > 0.5 && this.columns[0].some(card => card.tasks.some(task => task.readiness >= 0.5))) {
+                this.columns[0].forEach(note => {
+                    note.locked = true
+                })
             }
+            //============================
 
-            else if(this.columns[2].length === 5){
-                if (this.columns[1].length > 0){
-                    this.columns[1].forEach(item => {
-                        item.columns[1][task.indexNote].tasks.forEach(item => {
-                            item.readiness = true
-                        })
-                    })
-                }
-            }
-        }
-
-
+        },
     }
 
 })
@@ -164,10 +142,10 @@ Vue.component('note', {
             type: String,
             required: true,
         },
-        colIndex: {
+        columnIndex: {
             type: Number,
             required: true
-        }
+        },
     },
 
     template: `
@@ -181,7 +159,7 @@ Vue.component('note', {
                         <ul>
                             <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" >
                                 <p>{{ task.name }}</p>
-                                <input type="checkbox" @change="changeKeyTask(indexNote, indexTask, colIndex, name)" :disabled="task.readiness">
+                                <input type="checkbox" @change="getIndex(indexNote, indexTask, columnIndex, name)" :disabled="task.readiness"  :checked="task.readiness">
                             </li>
                         </ul>
                     </li>
@@ -191,11 +169,9 @@ Vue.component('note', {
     `,
 
     methods: {
-        changeKeyTask(indexNote, indexTask, colIndex, name){
-            this.$emit('changeTask', {indexNote, indexTask, colIndex, name})
+        getIndex(indexNote, indexTask, columnIndex, name){
+            this.$emit('getIndex', {indexNote, indexTask, columnIndex, name})
         },
-
-
     }
 })
 
@@ -223,6 +199,7 @@ Vue.component('create-note', {
             task_3: null,
             task_4: null,
             task_5: null,
+            locked: Boolean,
             id: 0,
             all_tasks: [],
             errors: []
@@ -249,6 +226,7 @@ Vue.component('create-note', {
                     status: 0
                 }
                 this.idUp()
+                this.removeNullTasks(note.tasks)
                 eventBus.$emit('notes-submitted', note);
                 this.name = null;
                 this.task_1 = null;
@@ -263,6 +241,17 @@ Vue.component('create-note', {
         },
         idUp(){
             this.id++
+        },
+
+        removeNullTasks(note){
+            let count = 1;
+            for(let i of note){
+                if (i.name === null) {
+                    count++
+                    note.splice(note.indexOf(i), count)
+                }
+            }
+
         }
     },
 })
