@@ -46,7 +46,7 @@ Vue.component('notes', {
         // При монтировании компонента, мы проверяем, есть ли в LocalStorage сохраненные данные
         const savedColumns = localStorage.getItem('columns');
         if (savedColumns) {
-        // Если данные найдены, мы присваиваем их текущим значениям компонента
+            // Если данные найдены, мы присваиваем их текущим значениям компонента
             this.columns = JSON.parse(savedColumns);
         }
 
@@ -55,7 +55,7 @@ Vue.component('notes', {
             this.errors_1 = [];
             if (this.columns[0].length < 3) {
                 this.columns[0].push(note);
-        // После добавления новой заметки в колонку, сохраняем все колонки в LocalStorage
+                // После добавления новой заметки в колонку, сохраняем все колонки в LocalStorage
                 this.saveNotes();
             } else {
                 this.errors_1.push('GABELLA! Maximum count of tasks!');
@@ -79,50 +79,34 @@ Vue.component('notes', {
         },
 
         getIndex(task) {
-            this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness = true
+            (!this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness)? this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness = true : this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness = false
             let tasking = this.columns[task.columnIndex][task.indexNote]
-            this.changeTask(task, tasking)
+            this.changeTask(tasking, task)
+            console.log(this.columns[task.columnIndex][task.indexNote].tasks)
         },
 
-        changeTask(task, tasking){
+        changeTask(tasking, task){
             let count = tasking.tasks.length;
             let readinessCount = 0;
 
-            for (let i = 0; i < tasking.tasks.length; i++) {
-                if (tasking.tasks[i].readiness === true) {
+            for (let i of this.columns[task.columnIndex][task.indexNote].tasks) {
+                if (i.readiness === true) {
                     readinessCount += 1;
                 }
             }
 
-            let percent = readinessCount / count;
-            let fif = 0.5
+            if ((readinessCount > count / 2) && (this.columns[task.columnIndex] === this.columns[0]) ){
+                let move = this.columns[task.columnIndex].splice(task.indexNote, 1)
+                this.columns[task.columnIndex+1].push(...move)
 
-            if ((fif <= percent) && (this.columns[task.columnIndex] === this.columns[0]) && (this.columns[1].length === 3) ){
-                this.columns[task.columnIndex + 1].push(this.columns[task.columnIndex][task.indexNote])
-                this.columns[task.columnIndex].splice(this.columns[task.columnIndex][task.indexNote], 1)
             }
             if (readinessCount === count && this.columns[task.columnIndex] === this.columns[1]){
-                let move = this.columns[task.columnIndex].splice(task.index, 1)
-                this.columns[task.columnIndex + 1].push(...move)
+                let move = this.columns[task.columnIndex].splice(task.indexNote,1)
+                this.columns[task.columnIndex+1].push(...move)
             }
-
-            //----------------------
-            let maxCards = 0
-            let maxColumnIndex = -1
-            for (let i = 0; i < this.columns.length; i++) {
-                if (this.columns[i].length > maxCards) {
-                    maxCards = this.columns[i].length
-                    maxColumnIndex = i
-                }
-            }
-            if (maxColumnIndex === 1 && percent > 0.5 && this.columns[0].some(card => card.tasks.some(task => task.readiness >= 0.5))) {
-                this.columns[0].forEach(note => {
-                    note.locked = true
-                })
-            }
-            //============================
 
         },
+
     }
 
 })
@@ -157,9 +141,10 @@ Vue.component('note', {
                     <li v-for="(note, indexNote) in column" class="li-list">
                         <h1>{{ note.name }}</h1>
                         <ul>
-                            <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" >
+                            <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" :key="indexTask">
                                 <p>{{ task.name }}</p>
-                                <input type="checkbox" @change="getIndex(indexNote, indexTask, columnIndex, name)" :disabled="task.readiness"  :checked="task.readiness">
+                                <p>{{ task.readiness }}</p>
+                                <input type="checkbox" @click.stop.prevent="getIndex(indexNote, indexTask, columnIndex, name)" :disabled="task.readiness" >
                             </li>
                         </ul>
                     </li>
@@ -170,7 +155,9 @@ Vue.component('note', {
 
     methods: {
         getIndex(indexNote, indexTask, columnIndex, name){
+            console.log(123)
             this.$emit('getIndex', {indexNote, indexTask, columnIndex, name})
+
         },
     }
 })
@@ -199,7 +186,7 @@ Vue.component('create-note', {
             task_3: null,
             task_4: null,
             task_5: null,
-            locked: Boolean,
+
             id: 0,
             all_tasks: [],
             errors: []
@@ -212,7 +199,7 @@ Vue.component('create-note', {
             this.errors = []
             this.all_tasks.push(this.task_1, this.task_2, this.task_3, this.task_4, this.task_5)
             this.all_tasks = this.all_tasks.filter(Boolean)
-            if (this.all_tasks.length >= 3 ){
+            if (this.all_tasks.length > 2 ){
                 let note = {
                     name: this.name,
                     tasks: [
@@ -253,6 +240,7 @@ Vue.component('create-note', {
             }
 
         }
+
     },
 })
 
