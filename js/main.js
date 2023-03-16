@@ -12,8 +12,8 @@ Vue.component('all-notes', {
 Vue.component('notes', {
     template: `
         <div class="notes">
-            <note :column="columns[0]" :errors="errors_1" :name="nameFirst" :columnIndex="columnIndex1" @getIndex="getIndex"></note>
-            <note :column="columns[1]" :errors="errors_2" :name="nameSecond" :columnIndex="columnIndex2" @getIndex="getIndex"></note>
+            <note :column="columns[0]" :errors="errors_1" :name="nameFirst" :columnIndex="columnIndex1" @getIndex="getIndex" :isBlocked="isFirstColumnBlocked"></note>
+            <note :column="columns[1]" :errors="errors_2" :name="nameSecond" :columnIndex="columnIndex2" @getIndex="getIndex" ></note>
             <note :column="columns[2]" :errors="errors_3" :name="nameThird" :columnIndex="columnIndex3"></note>
         </div>
     `,
@@ -37,25 +37,21 @@ Vue.component('notes', {
             columnIndex1: 0,
             columnIndex2: 1,
             columnIndex3: 2,
-
         }
     },
     // mounted - вызывается после того, как компонент был добавлен в DOM, т.е. србатывает после того как даннные улетели из формы сюда.
     // после чего он пытается достать и разобрать строку json из localstorage, и если ее нет, присваивает пустой массив
     mounted(){
-        // При монтировании компонента, мы проверяем, есть ли в LocalStorage сохраненные данные
+
         const savedColumns = localStorage.getItem('columns');
         if (savedColumns) {
-            // Если данные найдены, мы присваиваем их текущим значениям компонента
             this.columns = JSON.parse(savedColumns);
         }
 
-        // Подписываемся на событие notes-submitted
         eventBus.$on('notes-submitted', note => {
             this.errors_1 = [];
             if (this.columns[0].length < 3) {
                 this.columns[0].push(note);
-                // После добавления новой заметки в колонку, сохраняем все колонки в LocalStorage
                 this.saveNotes();
             } else {
                 this.errors_1.push('GABELLA! Maximum count of tasks!');
@@ -64,17 +60,23 @@ Vue.component('notes', {
     },
     // watch отслеживает изменения, если они есть, то он присваивает и сохраняет новые значения, добавляя их в localstorage и преобразовывая ('stringify') в json формат
     watch: {
-        // Отслеживаем изменения в колонках и сохраняем их в LocalStorage
         columns: {
             handler: 'saveNotes',
             deep: true
         },
+    },
+    computed: {
+        isFirstColumnBlocked() {
 
+            return this.columns[1].length === 5;
+        },
+        // isFirstColumnBlocked() {
+        //     return this.isSecondColumnBlocked && this.columnIndex1 === 0;
+        // },
     },
     // saveNote вызывается после выполнения mounted; присваивает и сохраняет значения в localstorage, преобразовывая ('stringify') их в json формат
     methods: {
         saveNotes() {
-            // Сохраняем все колонки в LocalStorage
             localStorage.setItem('columns', JSON.stringify(this.columns));
         },
 
@@ -94,19 +96,24 @@ Vue.component('notes', {
                     readinessCount += 1;
                 }
             }
+            console.log("columns",this.columns[0])
+            console.log("columns.len",this.columns[0].length)
+            console.log("columns1",this.columns[1])
+            console.log("columns1.len",this.columns[1].length)
+            if ((readinessCount > count / 2) && (this.columns[task.columnIndex] === this.columns[0])){
+                if(this.columns[1].length === 5){
+                    this.isFirstColumnBlocked()
+                }
 
-            if ((readinessCount > count / 2) && (this.columns[task.columnIndex] === this.columns[0]) ){
                 let move = this.columns[task.columnIndex].splice(task.indexNote, 1)
                 this.columns[task.columnIndex+1].push(...move)
-
             }
+
             if (readinessCount === count && this.columns[task.columnIndex] === this.columns[1]){
                 let move = this.columns[task.columnIndex].splice(task.indexNote,1)
                 this.columns[task.columnIndex+1].push(...move)
             }
-
         },
-
     }
 
 })
@@ -130,6 +137,11 @@ Vue.component('note', {
             type: Number,
             required: true
         },
+        isBlocked: {
+            type: Boolean,
+            required: false,
+        }
+
     },
 
     template: `
@@ -138,13 +150,13 @@ Vue.component('note', {
             <div class="note">
                 <h1 v-for="error in errors"> {{ error }}</h1>
                 <ul>
-                    <li v-for="(note, indexNote) in column" class="li-list">
+                    <li v-for="(note, indexNote) in column" class="li-list" >
                         <h1>{{ note.name }}</h1>
                         <ul>
                             <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" :key="indexTask">
                                 <p>{{ task.name }}</p>
                                 <p>{{ task.readiness }}</p>
-                                <input type="checkbox" @click.stop.prevent="getIndex(indexNote, indexTask, columnIndex, name)" :disabled="task.readiness" >
+                                <input type="checkbox" @click.stop.prevent="getIndex(indexNote, indexTask, columnIndex, name)" :disabled="isBlocked || task.readiness" :checked="task.readiness">
                             </li>
                         </ul>
                     </li>
@@ -155,9 +167,7 @@ Vue.component('note', {
 
     methods: {
         getIndex(indexNote, indexTask, columnIndex, name){
-            console.log(123)
             this.$emit('getIndex', {indexNote, indexTask, columnIndex, name})
-
         },
     }
 })
@@ -209,11 +219,8 @@ Vue.component('create-note', {
                         {name: this.task_4, readiness: false},
                         {name: this.task_5, readiness: false},
                     ],
-                    id:this.id,
-                    status: 0
                 }
-                this.idUp()
-                this.removeNullTasks(note.tasks)
+                note.tasks = this.removeNullTasks(note.tasks)
                 eventBus.$emit('notes-submitted', note);
                 this.name = null;
                 this.task_1 = null;
@@ -226,19 +233,12 @@ Vue.component('create-note', {
                 this.errors.push("GABELLA! From 3 to 5 tasks!")
             }
         },
-        idUp(){
-            this.id++
-        },
 
-        removeNullTasks(note){
-            let count = 1;
-            for(let i of note){
-                if (i.name === null) {
-                    count++
-                    note.splice(note.indexOf(i), count)
-                }
-            }
-
+        removeNullTasks(arr){
+            arr = arr.filter(el => {
+                return el.name !== null;
+            })
+            return arr
         }
 
     },
