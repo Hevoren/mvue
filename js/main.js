@@ -56,6 +56,7 @@ Vue.component('notes', {
             } else {
                 this.errors_1.push('GABELLA! Maximum count of tasks!');
             }
+
         });
     },
     // watch отслеживает изменения, если они есть, то он присваивает и сохраняет новые значения, добавляя их в localstorage и преобразовывая ('stringify') в json формат
@@ -67,9 +68,9 @@ Vue.component('notes', {
     },
     computed: {
         isFirstColumnBlocked() {
-
             return this.columns[1].length === 5;
         },
+
         // isFirstColumnBlocked() {
         //     return this.isSecondColumnBlocked && this.columnIndex1 === 0;
         // },
@@ -87,6 +88,15 @@ Vue.component('notes', {
             console.log(this.columns[task.columnIndex][task.indexNote].tasks)
         },
 
+        dateAdd(tasking){
+            let date = new Date()
+            let year = date.getFullYear()
+            let month = date.getMonth()+1
+            let day = date.getDate()
+            let time = date.toLocaleTimeString()
+            tasking.dateEnd = year + '-' + month + '-' + day + ' , ' + time
+        },
+
         changeTask(tasking, task){
             let count = tasking.tasks.length;
             let readinessCount = 0;
@@ -96,10 +106,7 @@ Vue.component('notes', {
                     readinessCount += 1;
                 }
             }
-            console.log("columns",this.columns[0])
-            console.log("columns.len",this.columns[0].length)
-            console.log("columns1",this.columns[1])
-            console.log("columns1.len",this.columns[1].length)
+
             if ((readinessCount > count / 2) && (this.columns[task.columnIndex] === this.columns[0])){
                 if(this.columns[1].length === 5){
                     this.isFirstColumnBlocked()
@@ -111,7 +118,8 @@ Vue.component('notes', {
 
             if (readinessCount === count && this.columns[task.columnIndex] === this.columns[1]){
                 let move = this.columns[task.columnIndex].splice(task.indexNote,1)
-                this.columns[task.columnIndex+1].push(...move)
+                this.dateAdd(tasking)
+                this.columns[2].push(...move)
             }
         },
     }
@@ -140,7 +148,7 @@ Vue.component('note', {
         isBlocked: {
             type: Boolean,
             required: false,
-        }
+        },
 
     },
 
@@ -156,8 +164,10 @@ Vue.component('note', {
                             <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" :key="indexTask">
                                 <p>{{ task.name }}</p>
                                 <p>{{ task.readiness }}</p>
+                                
                                 <input type="checkbox" @click.stop.prevent="getIndex(indexNote, indexTask, columnIndex, name)" :disabled="isBlocked || task.readiness" :checked="task.readiness">
                             </li>
+                            <p>{{ note.dateEnd }}</p>
                         </ul>
                     </li>
                 </ul>
@@ -196,7 +206,6 @@ Vue.component('create-note', {
             task_3: null,
             task_4: null,
             task_5: null,
-
             id: 0,
             all_tasks: [],
             errors: []
@@ -219,6 +228,7 @@ Vue.component('create-note', {
                         {name: this.task_4, readiness: false},
                         {name: this.task_5, readiness: false},
                     ],
+                    dateEnd:null,
                 }
                 note.tasks = this.removeNullTasks(note.tasks)
                 eventBus.$emit('notes-submitted', note);
@@ -240,7 +250,6 @@ Vue.component('create-note', {
             })
             return arr
         }
-
     },
 })
 
