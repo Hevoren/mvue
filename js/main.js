@@ -70,10 +70,6 @@ Vue.component('notes', {
         isFirstColumnBlocked() {
             return this.columns[1].length === 5;
         },
-
-        // isFirstColumnBlocked() {
-        //     return this.isSecondColumnBlocked && this.columnIndex1 === 0;
-        // },
     },
     // saveNote вызывается после выполнения mounted; присваивает и сохраняет значения в localstorage, преобразовывая ('stringify') их в json формат
     methods: {
@@ -85,7 +81,6 @@ Vue.component('notes', {
             (!this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness)? this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness = true : this.columns[task.columnIndex][task.indexNote].tasks[task.indexTask].readiness = false
             let tasking = this.columns[task.columnIndex][task.indexNote]
             this.changeTask(tasking, task)
-            console.log(this.columns[task.columnIndex][task.indexNote].tasks)
         },
 
         dateAdd(tasking){
@@ -94,7 +89,7 @@ Vue.component('notes', {
             let month = date.getMonth()+1
             let day = date.getDate()
             let time = date.toLocaleTimeString()
-            tasking.dateEnd = year + '-' + month + '-' + day + ' , ' + time
+            tasking.dateEnd = year + '-' + month + '-' + day + '  ' + time
         },
 
         changeTask(tasking, task){
@@ -246,10 +241,13 @@ Vue.component('create-note', {
 
         removeNullTasks(arr){
             arr = arr.filter(el => {
-                return el.name !== null;
+                if (el.name !== null || '' || undefined){
+                    return el.name;
+                }
             })
             return arr
         }
+
     },
 })
 
