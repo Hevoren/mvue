@@ -47,6 +47,7 @@ Vue.component('notes', {
         if (savedColumns) {
             this.columns = JSON.parse(savedColumns);
         }
+        console.log("KK")
 
         eventBus.$on('notes-submitted', note => {
             this.errors_1 = [];
