@@ -58,6 +58,7 @@ input {
     align-items: center;
     list-style-type: none;
     display: flex;
+    border: 1px solid black;
 }
 
     .li-task p{

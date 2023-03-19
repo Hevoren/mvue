@@ -12,9 +12,21 @@ Vue.component('all-notes', {
 Vue.component('notes', {
     template: `
         <div class="notes">
-            <note :column="columns[0]" :errors="errors_1" :name="nameFirst"     :columnIndex="columnIndex1" :columnLength="columnLength_1" @getIndex="getIndex" @increaseLength="increaseLength" :isBlocked="isFirstColumnBlocked"></note>
-            <note :column="columns[1]" :errors="errors_2" :name="nameSecond"    :columnIndex="columnIndex2" :columnLength="columnLength_2" @getIndex="getIndex" @increaseLength="increaseLength"></note>
-            <note :column="columns[2]" :errors="errors_3" :name="nameThird"     :columnIndex="columnIndex3"></note>
+            <note :column="columns[0]" :errors="errors_1" :name="nameFirst"
+                :columnIndex="columnIndex1" :columnLength="columnLength_1"
+                @getIndex="getIndex" @increaseLength="increaseLength"
+                :isBlocked="isFirstColumnBlocked"
+                @drag-start="dragStart" @drag-over="dragOver"
+                @drag-leave="dragLeave" @drop="drop"></note>
+            <note :column="columns[1]" :errors="errors_2" :name="nameSecond"
+                :columnIndex="columnIndex2" :columnLength="columnLength_2"
+                @getIndex="getIndex" @increaseLength="increaseLength"
+                @drag-start="dragStart" @drag-over="dragOver"
+                @drag-leave="dragLeave" @drop="drop"></note>
+            <note :column="columns[2]" :errors="errors_3" :name="nameThird"
+                :columnIndex="columnIndex3"
+                @drag-start="dragStart" @drag-over="dragOver"
+                @drag-leave="dragLeave" @drop="drop"></note>
         </div>
     `,
 
@@ -40,6 +52,11 @@ Vue.component('notes', {
 
             columnLength_1: 3,
             columnLength_2: 5,
+
+            draggingTask: null,
+            draggingNote: null,
+            draggingColumnIndex: null,
+            isDraggingOver: false,
         }
     },
     // mounted - вызывается после того, как компонент был добавлен в DOM, т.е. србатывает после того как даннные улетели из формы сюда.
@@ -77,6 +94,44 @@ Vue.component('notes', {
     },
     // saveNote вызывается после выполнения mounted; присваивает и сохраняет значения в localstorage, преобразовывая ('stringify') их в json формат
     methods: {
+        dragStart(task) {
+            this.draggingTask = task.indexTask;
+            this.draggingNote = task.indexNote;
+            this.draggingColumnIndex = task.columnIndex;
+            console.log(this.draggingNote)
+            console.log(this.draggingTask)
+            console.log(this.draggingColumnIndex)
+        },
+
+        dragOver(task) {
+            event.preventDefault();
+            if (task.columnIndex === this.draggingColumnIndex && task.indexNote === this.draggingNote && task.indexTask === this.draggingTask) {
+                // set isDraggingOver to true to highlight the drop target
+                this.isDraggingOver = true;
+            }
+        },
+
+        dragLeave() {
+            this.isDraggingOver = false;
+        },
+
+        drop(task) {
+            if (this.isDraggingOver && (task.columnIndex === this.draggingColumnIndex && task.indexNote === this.draggingNote && task.indexTask === this.draggingTask)) {
+                // remove the dragging task from its original position
+                console.log(1123)
+                const movedTask = this.columns[this.draggingColumnIndex][this.draggingNote].tasks.splice(this.draggingTask, 1);
+
+                // insert the dragging task to the new position
+                this.columns[task.columnIndex][task.indexNote].tasks.splice(task.indexTask, 0, movedTask);
+
+                // reset the dragging properties and save changes
+                this.isDraggingOver = false;
+                this.draggingTask = null;
+                this.draggingNote = null;
+                this.draggingColumnIndex = null;
+                this.saveNotes();
+            }
+        },
         saveNotes() {
             localStorage.setItem('columns', JSON.stringify(this.columns));
         },
@@ -97,7 +152,6 @@ Vue.component('notes', {
         },
 
         increaseLength(length){
-            console.log("pixda")
             if (length === this.columnLength_1){
                 let inc = 1
                 length += 1
@@ -178,14 +232,18 @@ Vue.component('note', {
                     <button style="width: 40px; height: 40px; margin: 0 auto; border-radius: 50%;" @click="increaseLength(columnLength)"> + 1</button>
                 </div>
             </div>
-            <div class="note">
+            <div class="note" >
                 <h1 v-for="error in errors"> {{ error }}</h1>
                 <ul>
                     <li v-for="(note, indexNote) in column" class="li-list" >
                         <h1>{{ note.name }}</h1>
                         
                         <ul>
-                            <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" :key="indexTask">
+                            <li class="li-task" v-for="(task, indexTask) in note.tasks" :key="indexTask" :draggable="true" 
+                                @dragstart="dragStart(indexNote, columnIndex, indexTask)"
+                                @dragover="dragOver(indexNote, columnIndex, indexTask)"
+                                @dragleave="dragLeave"
+                                @drop="drop(indexNote, columnIndex, indexTask)">
                                 <p>{{ task.name }}</p>
                                 <p>{{ task.readiness }}</p>
                                 
@@ -204,10 +262,23 @@ Vue.component('note', {
             this.$emit('getIndex', {indexNote, indexTask, columnIndex, name})
         },
         increaseLength(columnLength){
-            console.log("pisya")
             this.$emit('increaseLength', columnLength)
+        },
+        dragStart(indexNote, columnIndex, indexTask) {
+            this.$emit('drag-start', {indexNote, columnIndex, indexTask});
+        },
+        dragOver(indexNote, columnIndex, indexTask) {
+            event.preventDefault();
+            this.$emit('drag-over', {indexNote, columnIndex, indexTask});
+        },
+        dragLeave(event) {
+            this.$emit('drag-leave', this.indexNote, this.columnIndex, this.indexTask);
+        },
+        drop(indexNote, columnIndex, indexTask) {
+            event.preventDefault();
+            this.$emit('drop', {indexNote, columnIndex, indexTask});
         }
-    }
+    },
 })
 
 Vue.component('create-note', {
