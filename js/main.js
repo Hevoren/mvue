@@ -12,9 +12,9 @@ Vue.component('all-notes', {
 Vue.component('notes', {
     template: `
         <div class="notes">
-            <note :column="columns[0]" :errors="errors_1" :name="nameFirst" :columnIndex="columnIndex1" @getIndex="getIndex" :isBlocked="isFirstColumnBlocked"></note>
-            <note :column="columns[1]" :errors="errors_2" :name="nameSecond" :columnIndex="columnIndex2" @getIndex="getIndex" ></note>
-            <note :column="columns[2]" :errors="errors_3" :name="nameThird" :columnIndex="columnIndex3"></note>
+            <note :column="columns[0]" :errors="errors_1" :name="nameFirst"     :columnIndex="columnIndex1" :columnLength="columnLength_1" @getIndex="getIndex" @increaseLength="increaseLength" :isBlocked="isFirstColumnBlocked"></note>
+            <note :column="columns[1]" :errors="errors_2" :name="nameSecond"    :columnIndex="columnIndex2" :columnLength="columnLength_2" @getIndex="getIndex" @increaseLength="increaseLength"></note>
+            <note :column="columns[2]" :errors="errors_3" :name="nameThird"     :columnIndex="columnIndex3"></note>
         </div>
     `,
 
@@ -37,6 +37,9 @@ Vue.component('notes', {
             columnIndex1: 0,
             columnIndex2: 1,
             columnIndex3: 2,
+
+            columnLength_1: 3,
+            columnLength_2: 5,
         }
     },
     // mounted - вызывается после того, как компонент был добавлен в DOM, т.е. србатывает после того как даннные улетели из формы сюда.
@@ -51,7 +54,7 @@ Vue.component('notes', {
 
         eventBus.$on('notes-submitted', note => {
             this.errors_1 = [];
-            if (this.columns[0].length < 3) {
+            if (this.columns[0].length < this.columnLength_1) {
                 this.columns[0].push(note);
                 this.saveNotes();
             } else {
@@ -69,7 +72,7 @@ Vue.component('notes', {
     },
     computed: {
         isFirstColumnBlocked() {
-            return this.columns[1].length === 5;
+            return this.columns[1].length === this.columnLength_2;
         },
     },
     // saveNote вызывается после выполнения mounted; присваивает и сохраняет значения в localstorage, преобразовывая ('stringify') их в json формат
@@ -93,6 +96,21 @@ Vue.component('notes', {
             tasking.dateEnd = year + '-' + month + '-' + day + '  ' + time
         },
 
+        increaseLength(length){
+            console.log("pixda")
+            if (length === this.columnLength_1){
+                let inc = 1
+                length += 1
+                this.columnLength_1 = length
+            }
+            else{
+                let inc = 1
+                length += 1
+                this.columnLength_2 = length
+            }
+
+        },
+
         changeTask(tasking, task){
             let count = tasking.tasks.length;
             let readinessCount = 0;
@@ -104,7 +122,7 @@ Vue.component('notes', {
             }
 
             if ((readinessCount > count / 2) && (this.columns[task.columnIndex] === this.columns[0])){
-                if(this.columns[1].length === 5){
+                if(this.columns[1].length === this.columnLength_2){
                     this.isFirstColumnBlocked()
                 }
 
@@ -145,17 +163,27 @@ Vue.component('note', {
             type: Boolean,
             required: false,
         },
-
+        columnLength: {
+            type: Number,
+            required: false
+        }
     },
 
     template: `
         <div>
-            <p>{{ name }}</p>
+            <div class="title">
+                <p style="width: 50%; text-align: center;"><b>{{ name }}</b></p>
+                <div style="width: 50%; display: flex; flex-direction: row">
+                    <p style="width: 50% text-align: center;" v-show="columnIndex !== 2"><b>Max Length: </b>{{ columnLength }}</p>
+                    <button style="width: 40px; height: 40px; margin: 0 auto; border-radius: 50%;" @click="increaseLength(columnLength)"> + 1</button>
+                </div>
+            </div>
             <div class="note">
                 <h1 v-for="error in errors"> {{ error }}</h1>
                 <ul>
                     <li v-for="(note, indexNote) in column" class="li-list" >
                         <h1>{{ note.name }}</h1>
+                        
                         <ul>
                             <li v-for="(task, indexTask) in note.tasks" class="li-task" v-if="task.name !== null" :key="indexTask">
                                 <p>{{ task.name }}</p>
@@ -175,6 +203,10 @@ Vue.component('note', {
         getIndex(indexNote, indexTask, columnIndex, name){
             this.$emit('getIndex', {indexNote, indexTask, columnIndex, name})
         },
+        increaseLength(columnLength){
+            console.log("pisya")
+            this.$emit('increaseLength', columnLength)
+        }
     }
 })
 
@@ -204,7 +236,7 @@ Vue.component('create-note', {
             task_5: null,
             id: 0,
             all_tasks: [],
-            errors: []
+            errors: [],
         }
     },
 

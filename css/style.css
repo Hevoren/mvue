@@ -11,6 +11,11 @@ h1, h2{
     flex-direction: column;
 }
 
+.title{
+    display: flex;
+    flex-direction: row;
+}
+
 .notes{
     display: flex;
     flex-direction: row;
