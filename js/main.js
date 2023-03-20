@@ -98,9 +98,8 @@ Vue.component('notes', {
             this.draggingTask = task.indexTask;
             this.draggingNote = task.indexNote;
             this.draggingColumnIndex = task.columnIndex;
-            console.log(this.draggingNote)
-            console.log(this.draggingTask)
-            console.log(this.draggingColumnIndex)
+            console.log("task", this.draggingColumnIndex, this.draggingNote, this.draggingTask)
+
         },
 
         dragOver(task) {
@@ -116,10 +115,9 @@ Vue.component('notes', {
         },
 
         drop(task) {
-            if (this.isDraggingOver && (task.columnIndex === this.draggingColumnIndex && task.indexNote === this.draggingNote && task.indexTask === this.draggingTask)) {
+            if ((task.columnIndex === this.draggingColumnIndex && task.indexNote === this.draggingNote && task.indexTask !== this.draggingTask)) {
                 // remove the dragging task from its original position
-                console.log(1123)
-                const movedTask = this.columns[this.draggingColumnIndex][this.draggingNote].tasks.splice(this.draggingTask, 1);
+                const movedTask = this.columns[this.draggingColumnIndex][this.draggingNote].tasks.splice(this.draggingTask, 1)[0];
 
                 // insert the dragging task to the new position
                 this.columns[task.columnIndex][task.indexNote].tasks.splice(task.indexTask, 0, movedTask);
@@ -132,6 +130,7 @@ Vue.component('notes', {
                 this.saveNotes();
             }
         },
+
         saveNotes() {
             localStorage.setItem('columns', JSON.stringify(this.columns));
         },
